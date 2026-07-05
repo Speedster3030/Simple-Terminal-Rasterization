@@ -9,6 +9,11 @@
 **The program I have made is very simple, working with arrays of points and continuously applying rotation matrices on them to simulate the motion of the donut.**  
 
 ![Screenshot](IMG_20260705_062020.jpg)  
-
+![Screenshot](IMG_20260705_062038.jpg)
+![Screenshot](IMG_20260705_062052.jpg)
+![Screenshot](IMG_20260705_062109.jpg)
+![Screenshot](IMG_20260705_062118.jpg)
+![Screenshot](IMG_20260705_062130.jpg)
+![Screenshot](IMG_20260705_062143.jpg)
 
 
