@@ -147,7 +147,7 @@ POINT3D* cone(int* size)
 
 POINT3D* torus(float r, float R, POINT3D ctr, POINT3D rot, int d1, int d2, int d3, int* size)
 {
-    int s=0,da,db,dc;
+    int s=0;
     float i,j,x,y,z,a,b,c;
 
     POINT3D* points= malloc(15000*sizeof(POINT3D));
@@ -162,11 +162,8 @@ POINT3D* torus(float r, float R, POINT3D ctr, POINT3D rot, int d1, int d2, int d
             a= rot.x;
             b= rot.y;
             c= rot.z;
-            da= d1;
-            db= d2;
-            dc= d3;
 
-            POS_INFO P= {a,b,c,da,db,dc};
+            POS_INFO P= {a,b,c,d1,d2,d3};
             points[s]=(POINT3D){x,y,z,P};
             s++;
         }
