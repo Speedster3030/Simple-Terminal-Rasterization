@@ -14,225 +14,232 @@ char buffer[ROWS][COLS];
 
 typedef struct
 {
-    float a,b,c;
-    int da,db,dc;
+  float a,b,c;
+  int da,db,dc;
 }POS_INFO;
 
 typedef struct
 {
-    float x,y,z;
-    POS_INFO P;   // to help with individual rotations
-
+  float x,y,z;
+  POS_INFO P; //center and directions
 }POINT3D;
 
 typedef struct
 {
-    int x;
-    int y;
-
+  int x;
+  int y;
 }POINTSCRN;
+
+typedef struct
+{
+  POINT3D points[30000];
+  int count;
+}POINTARR;
 
 
 POINT3D rotate_Z(POINT3D p, POINT3D c, int dir)
 {
-    float a= dir*0.1;
-    float nx= c.x + (p.x-c.x)*cos(a) + (p.y-c.y)*sin(a);
-    float ny= c.y + (p.y-c.y)*cos(a) - (p.x-c.x)*sin(a);
+  float a= dir*0.1;
+  float nx= c.x + (p.x-c.x)*cos(a) + (p.y-c.y)*sin(a);
+  float ny= c.y + (p.y-c.y)*cos(a) - (p.x-c.x)*sin(a);
 
-    return (POINT3D){nx,ny,p.z,p.P};
+  return (POINT3D){nx,ny,p.z,p.P};
 }
 
 POINT3D rotate_Y(POINT3D p, POINT3D c, int dir)
 {
-    float a= dir*0.1;
-    float nx= c.x + (p.x-c.x)*cos(a) + (p.z-c.z)*sin(a);
-    float nz= c.z + (p.z-c.z)*cos(a) - (p.x-c.x)*sin(a);
+  float a= dir*0.1;
+  float nx= c.x + (p.x-c.x)*cos(a) + (p.z-c.z)*sin(a);
+  float nz= c.z + (p.z-c.z)*cos(a) - (p.x-c.x)*sin(a);
 
-    return (POINT3D){nx,p.y,nz,p.P};
+  return (POINT3D){nx,p.y,nz,p.P};
 }
 
 POINT3D rotate_X(POINT3D p, POINT3D c, int dir)
 {
-    float a= dir*0.1;
-    float ny= c.y + (p.y-c.y)*cos(a) + (p.z-c.z)*sin(a);
-    float nz= c.z + (p.z-c.z)*cos(a) - (p.y-c.y)*sin(a);
+  float a= dir*0.1;
+  float ny= c.y + (p.y-c.y)*cos(a) + (p.z-c.z)*sin(a);
+  float nz= c.z + (p.z-c.z)*cos(a) - (p.y-c.y)*sin(a);
 
-    return (POINT3D){p.x,ny,nz,p.P};
+  return (POINT3D){p.x,ny,nz,p.P};
 }
 
 POINTSCRN map(POINT3D p)
 {
-    p.z+= 200;
-    float F= 100;
-    int x= (int)(F*p.x/p.z);
-    int y= (int)(F*p.y/p.z);
+  p.z+= 200;
+  float F= 150;
+  int x= (int)(F*p.x/p.z);
+  int y= (int)(F*p.y/p.z);
 
-    return (POINTSCRN){x+(ROWS/2-1),y+(COLS/2-1)};
+  return (POINTSCRN){x+(ROWS/2-1),y+(COLS/2-1)};
 }
 
 void display()
 {
-    int i,j;
+  int i,j;
 
-    for(i=0;i<ROWS;i++)
+  for(i=0;i<ROWS;i++)
+  {
+    for(j=0;j<COLS;j++)
     {
-        for(j=0;j<COLS;j++)
-        {
-            printf("%c",buffer[i][j]);
-        }
-        printf("\n");
+      printf("%c",buffer[i][j]);
     }
+    printf("\n");
+  }
 }
 
 void init(char ch)
 {
-    int i,j;
+  int i,j;
 
-    for(i=0;i<ROWS;i++)
+  for(i=0;i<ROWS;i++)
+  {
+    for(j=0;j<COLS;j++)
     {
-        for(j=0;j<COLS;j++)
-        {
-            buffer[i][j]=ch;
-        }
+      buffer[i][j]=ch;
     }
+  }
 }
 
-/*
-
-POINT3D* ellipse(int* size)
+POINTARR* torus(float r, float R, POINT3D ctr, POINT3D rot, int d1, int d2, int d3)
 {
-    int s=0;
-    float i,a=20,b=20;
-    float x,y;
+  int s=0;
+  float i,j,x,y,z;
 
-    POINT3D* points= malloc(5000*sizeof(POINT3D));
+  POINTARR* arr= malloc(sizeof(POINTARR));
 
-    for(i=0;i<=2*PI;i+=0.002)
+  for(i=0;i<=2*PI;i+=0.05)
+  {
+    for(j=0;j<=2*PI;j+=0.06)
     {
-        x= a*cos(i);
-        y= b*sin(i);
-        points[s]= (POINT3D){y,x,5};
-        s++;
-    }
+      x= ctr.x + (R+r*cos(i))*cos(j);
+      y= ctr.y + (R+r*cos(i))*sin(j);
+      z= ctr.z + r*sin(i);
 
-    *size= s;
-    return points;
+      POS_INFO P= {rot.x,rot.y,rot.z,d1,d2,d3};
+      arr->points[s]=(POINT3D){x,y,z,P};
+      s++;
+    }
+  }
+
+  arr->count= s;
+  return arr;
 }
 
-POINT3D* cone(int* size)
+POINTARR* bump(float r, float R, float c, POINT3D ctr, POINT3D rot, int d1, int d2, int d3)
 {
-    float i,j;
-    int s=0;
+  int s=0;
+  float i,j,x,y,z;
+  POS_INFO P;
 
-    float h=35,r=10,x,y,z;
+  POINTARR* arr= malloc(sizeof(POINTARR));
 
-    POINT3D* points= malloc(17000*sizeof(POINT3D));
-
-    for(i=0;i<=1;i+=0.02)
+  for(i=0;i<2*PI;i+=0.1)
+  {
+    for(j=0;j<PI;j+=0.1)
     {
-        for(j=0;j<=2*PI;j+=0.02)
-        {
-            x= (1-i)*r*cos(j);
-            y= (1-i)*r*sin(j);
-            z= i*h-h/2;
+      x= ctr.x + (R+r*sin(c*i)*sin(c*j))*sin(j)*cos(i);
+      y= ctr.y + (R+r*sin(c*i)*sin(c*j))*sin(j)*sin(i);
+      z= ctr.z + (R+r*sin(c*i)*sin(c*j))*cos(j);
 
-            points[s]= (POINT3D){x,y,z};
-            s++;
-        }
+      P= (POS_INFO){rot.x,rot.y,rot.z,d1,d2,d3};
+      arr->points[s++]= (POINT3D){x,y,z,P};
     }
+  }
 
-    *size= s;
-    return points;
-}*/
+  arr->count= s;
+  return arr;
+}
 
-POINT3D* torus(float r, float R, POINT3D ctr, POINT3D rot, int d1, int d2, int d3, int* size)
+POINTARR* square(POINT3D rot, int d1, int d2, int d3)
 {
-    int s=0;
-    float i,j,x,y,z,a,b,c;
+  int s=0;
+  float i,j,x,y,z,sx=-10,sy=-10;
+  POINTARR* arr= malloc(sizeof(POINTARR));
+  POS_INFO P= {rot.x,rot.y,rot.z,d1,d2,d3};
 
-    POINT3D* points= malloc(15000*sizeof(POINT3D));
-
-    for(i=0;i<=2*PI;i+=0.05)
+  for(i=0;i<100;i+=1)
+  {
+    for(j=0;j<100;j+=1)
     {
-        for(j=0;j<=2*PI;j+=0.06)
-        {
-            x= ctr.x + (R+r*cos(i))*cos(j);
-            y= ctr.y + (R+r*cos(i))*sin(j);
-            z= ctr.z + r*sin(i);
-            a= rot.x;
-            b= rot.y;
-            c= rot.z;
-
-            POS_INFO P= {a,b,c,d1,d2,d3};
-            points[s]=(POINT3D){x,y,z,P};
-            s++;
-        }
+      x= sx + i;
+      y= sy + j;
+      arr->points[s++]= (POINT3D){x,y,5,P};
     }
+  }
 
-    *size= s;
-    return points;
+  arr->count= s;
+  return arr;
 }
 
 
 int main()
 {
-    char ch= ' ';
-    init(ch);
+  char ch= ' ';
+  init(ch);
 
-    int la,lb,l,lp,ld;
-    POS_INFO P;
-    POINT3D t= {40,1,1,P};
-    POINT3D x= {0,0,0,P};
-    POINT3D C= {-60,0,160,P};
+  POS_INFO P;
+  POINT3D x= {0,0,0,P};
+  POINT3D C= {-90,40,70,P};
+  POINT3D C2= {90,-40,10,P};
+  POINT3D C3= {90,40,80,P};
+  POINT3D C4= {-90,-40,50,P};
 
-    POINT3D* line= torus(7.5,30,x,x,-1,1,-1,&l);
+  POINTARR* sld= bump(30,10,1,x,x,1,1,1);
+  POINTARR* tor= bump(55,0,1,C,C,-1,0,0);
+  POINTARR* sld2= bump(25,0,1,C2,C2,0,0,-1);
+  POINTARR* sld3= bump(40,0,1,C3,C3,-1,0,0);
+  POINTARR* tor2= bump(30,0,1,C4,C4,0,1,0);
 
-    int i,c=220;
+  POINTARR* shapes[5]= {sld,tor,sld2,sld3,tor2};
 
-    system("clear");
+  int i,k,ls= sizeof(shapes)/sizeof(shapes[0]),c=220;
 
-    printf("\e[?25l");
+  system("clear");char chr;
 
-    while(c)
+  printf("\e[?25l");
+
+  while(c)
+  {
+    for(k=0;k<ls;k++)
     {
-        for(i=0;i<l;i++)
+      for(i=0;i<shapes[k]->count;i++)
+      {
+        POINTSCRN p= map(shapes[k]->points[i]);
+        if(p.x>=0 && p.y>=0 && p.x<ROWS && p.y<COLS)
         {
-            POINTSCRN p= map(line[i]);
-            if(p.x>=0 && p.y>=0 && p.x<ROWS && p.y<COLS)
-            {
-                buffer[p.x][p.y]='@';
-            }
+          buffer[p.x][p.y]='@';
         }
-
-        display();
-
-        for(i=0;i<l;i++)
-        {
-            POINTSCRN p= map(line[i]);
-            if(p.x>=0 && p.y>=0 && p.x<ROWS && p.y<COLS)
-            {
-                buffer[p.x][p.y]=ch;
-            }
-
-            POINT3D t= {line[i].P.a,line[i].P.b,line[i].P.c,P};
-            line[i]= rotate_Y(line[i],t,line[i].P.da);
-            line[i]= rotate_X(line[i],t,line[i].P.db);
-            line[i]= rotate_Z(line[i],t,line[i].P.dc);
-            t= rotate_Z(t,C,1);
-            line[i].P.a= t.x;
-            line[i].P.b= t.y;
-            line[i].P.c= t.z;
-            line[i]= rotate_Z(line[i],C,1);
-        }
-
-        usleep(50000);
-        c--;
-        printf("\033[H");
-
-        //system("clear");
+      }
     }
 
-    printf("\e[?25h");
-    printf("This shape had %d points\n",l);
-    return 0;
+    display();
+
+    for(k=0;k<ls;k++)
+    {
+      POINTARR* a= shapes[k];
+      for(i=0;i<a->count;i++)
+      {
+        POINTSCRN p= map(a->points[i]);
+        if(p.x>=0 && p.y>=0 && p.x<ROWS && p.y<COLS)
+        {
+          buffer[p.x][p.y]=ch;
+        }
+
+        POINT3D t= {a->points[i].P.a,a->points[i].P.b,a->points[i].P.c,P};
+        a->points[i]= rotate_Y(a->points[i],t,a->points[i].P.da);
+        a->points[i]= rotate_X(a->points[i],t,a->points[i].P.db);
+        a->points[i]= rotate_Z(a->points[i],t,a->points[i].P.dc);
+      }
+    }
+
+    usleep(50000);
+    c--;
+    printf("\033[H");
+
+    //system("clear");
+  }
+
+  printf("\e[?25h");
+  return 0;
 }
